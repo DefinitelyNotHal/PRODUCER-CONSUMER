@@ -1,9 +1,12 @@
-#include "buffer.h"
 #include <iostream>
 #include <pthread.h>
 #include <semaphore.h>
-#include <stdlib.h>/* required for rand() */
 #include <windows.h>
+#include <random>
+#include <ctime>
+typedef int buffer_item;
+#define BUFFER_SIZE 5
+
 using namespace std;
 
 
@@ -20,48 +23,50 @@ void initialization();
 void *producer(void *param);
 void *consumer(void *param);
 
+default_random_engine gen(time(NULL));
+uniform_int_distribution<int> processNumber(0, 30000);
+
 ///figure 5.25 main function initialize the buffer and create the separate producer and consumer threads
 ///once it creates threads, it will sleep for a period of time, then awake to terminate the application
 ///3 parameters: 1. the length of sleeping time. 2. # of producer threads. 3. # of consumer threads.
-int main(int argc, char *argv[])
+int main()
 {
-/* 1. Get command line arguments argv[1],argv[2],argv[3] */
-    if (argc != 4)
-    {
-        cout<<"Please respectively input the length of sleeping time, # of producer threads, and # of consumer threads.\n"<<endl;
-        return 0;
-    }
-    if ((atoi(argv[1])<0)||(atoi(argv[2])<0)||(atoi(argv[3])<0))
+
+    int lengthSleepT=0; //main sleeping time
+    int numProducer=0; //number of producers
+    int numConsumer=0; //number of consumers
+
+    cout<<"Please respectively input the length of sleeping time, # of producer threads, and # of consumer threads.\n";
+    cin >> lengthSleepT >> numProducer >> numConsumer;
+
+    if (lengthSleepT<0 || numProducer<0 || numConsumer<0)
     {
         cout<<"please enter a positive number that is greater than 0.\n"<<endl;
         return 0;
     }
-    int lengthSleepT=atoi(argv[1]);//main sleeping time
-    int numProducer=atoi(argv[2]);//number of producers
-    int numConsumer=atoi(argv[3]);//number of consumers
+
 /* 2. Initialize buffer */
     initialization();
 /* 3. Create producer thread(s) */
-    for(unsigned int i=0;i<numProducer;i++)
+    for(int i=0;i<numProducer;i++)
     {
         pthread_t tid; //the thread identifier
         pthread_attr_t attr; //set of thread attributes
         pthread_attr_init(&attr);//obtain default attributes
         pthread_create(&tid,&attr,producer,NULL);//create producer thread
-        pthread_join(tid,NULL);//make sure thread exits
     }
 
 /* 4. Create consumer thread(s) */
-    for(unsigned int i=0;i<numConsumer;i++)
+    for(int i=0;i<numConsumer;i++)
     {
         pthread_t tid; //the thread identifier
         pthread_attr_t attr; //set of thread attributes
         pthread_attr_init(&attr);//obtain default attributes
         pthread_create(&tid,&attr,consumer,NULL);//create producer thread
-        pthread_join(tid,NULL);//make sure thread exits
     }
 /* 5. Sleep */
     Sleep(lengthSleepT);
+
 /* 6. Exit */
     return 0;
 }
@@ -127,14 +132,19 @@ void *producer(void *param)
     buffer_item item;
     while (true)
     {
+
     /* sleep for a random period of time */
-    Sleep(rand()/RAND_MAX);//We don't want it wait too long
+    Sleep(processNumber(gen)/10000);//We don't want it wait too long
+
     /* generate a random number */
-    item = rand();//produce an item in next_produced
+    item = processNumber(gen);//produce an item in next_produced
+
     /* acquire the semaphore */
     sem_wait(&emptySem);//wait(empty)
+
     /* acquire the mutex lock */
     pthread_mutex_lock(&mutex);//wait(mutex)
+
     /* add next_produced to the buffer */
     /* critical section */
     if (insert_item(item))
@@ -157,23 +167,30 @@ void *consumer(void *param)
     buffer_item item;
     while (true)
     {
+
     /* sleep for a random period of time */
     Sleep(rand()/RAND_MAX);//we don't want it wait too long
+
     /* acquire the semaphore */
     sem_wait(&fullSem);//wait(full)
+
     /* acquire the mutex lock */
     pthread_mutex_lock(&mutex);//wait(mutex)
+
     /* remove an item from buffer to next_consumed */
     if (remove_item(&item))
     {
         cout<<"report error condition";
     }
+
     else
     {
         cout<<"consumer consumed "<<item<<endl;
     }
+
     /* release the mutex lock */
     pthread_mutex_unlock(&mutex);//signal(mutex)
+
     /* release the semaphore */
     sem_post(&emptySem);//signal(empty)
     }

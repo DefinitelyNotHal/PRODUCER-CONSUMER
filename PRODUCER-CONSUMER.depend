@@ -1,0 +1,11 @@
+# depslib dependency file v1.0
+1532116063 source:c:\users\hal\desktop\cs471\cs471project\producer-consumer\main.cpp
+	<iostream>
+	<pthread.h>
+	<semaphore.h>
+	<windows.h>
+	<random>
+	<ctime>
+
+1532066653 c:\users\hal\desktop\cs471\cs471project\producer-consumer\buffer.h
+
