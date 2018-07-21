@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <random>
 #include <ctime>
+#include <fstream>
 typedef int buffer_item;
 #define BUFFER_SIZE 5
 
@@ -26,6 +27,9 @@ void *consumer(void *param);
 default_random_engine gen(time(NULL));
 uniform_int_distribution<int> processNumber(0, 30000);
 
+ofstream outFile;
+
+
 ///figure 5.25 main function initialize the buffer and create the separate producer and consumer threads
 ///once it creates threads, it will sleep for a period of time, then awake to terminate the application
 ///3 parameters: 1. the length of sleeping time. 2. # of producer threads. 3. # of consumer threads.
@@ -35,6 +39,7 @@ int main()
     int lengthSleepT=0; //main sleeping time
     int numProducer=0; //number of producers
     int numConsumer=0; //number of consumers
+    outFile.open("producer-consumer-output.txt");
 
     cout<<"Please respectively input the length of sleeping time, # of producer threads, and # of consumer threads.\n";
     cin >> lengthSleepT >> numProducer >> numConsumer;
@@ -44,6 +49,8 @@ int main()
         cout<<"please enter a positive number that is greater than 0.\n"<<endl;
         return 0;
     }
+
+    outFile << "Length of Sleeping Time: " << lengthSleepT << "\nNumber of Producer Threads: " << numProducer << "\nNumber of Consumer Threads: " << numConsumer << endl << endl;
 
 /* 2. Initialize buffer */
     initialization();
@@ -150,10 +157,12 @@ void *producer(void *param)
     if (insert_item(item))
     {
         cout<<"report error condition";
+        outFile<<"report error condition\n";
     }
     else
     {
         cout<<"producer produced "<<item<<endl;
+        outFile<<"producer produced "<<item<<endl;
     }
     /* release the mutex lock */
     pthread_mutex_unlock(&mutex);//signal(mutex)
@@ -181,11 +190,13 @@ void *consumer(void *param)
     if (remove_item(&item))
     {
         cout<<"report error condition";
+        outFile<<"report error condition";
     }
 
     else
     {
         cout<<"consumer consumed "<<item<<endl;
+        outFile<<"consumer consumed "<<item<<endl;
     }
 
     /* release the mutex lock */

@@ -1,0 +1,6 @@
+Length of Sleeping Time: 1
+Number of Producer Threads: 2
+Number of Consumer Threads: 3
+
+producer produced 15558
+consumer consumed 15558
